@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+
+# Notebooks (生成物)
+notebooks/generated/
+
+# Secrets
+.env
+
+# Colab / Drive
+*.ipynb_checkpoints/
