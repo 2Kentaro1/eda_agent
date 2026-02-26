@@ -1,3 +1,10 @@
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+
+sys.path.append(str(SRC))
+
 import json
 from pathlib import Path
 from google import genai
@@ -6,7 +13,10 @@ import pandas as pd
 import numpy as np
 from src.eda_agent.pipeline import EDAAgentPipeline
 from src.eda_agent.modeling.model_builder import ModelBuilder
+from dotenv import load_dotenv
 
+
+load_dotenv()
 
 class Orchestrator:
     """
