@@ -10,3 +10,7 @@ notebooks/generated/
 
 # Colab / Drive
 *.ipynb_checkpoints/
+
+data/
+
+.venv
