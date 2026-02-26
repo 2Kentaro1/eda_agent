@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -6,7 +7,6 @@ SRC = ROOT / "src"
 sys.path.append(str(SRC))
 
 import json
-from pathlib import Path
 from google import genai
 import os
 import pandas as pd
