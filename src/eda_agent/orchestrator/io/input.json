@@ -1,0 +1,54 @@
+{
+  "project_goal": "会社のカフェフロアで販売されているお弁当の販売数を予測するモデルを構築したい",
+
+  "context": {
+    "competition_name": "SIGNATE お弁当需要予測コンペティション",
+    "business_background": "日々の弁当販売数を予測し、適切な仕入れ・廃棄削減・需要予測精度向上を目指す。",
+    "prediction_target": "その日に売れるお弁当の数（整数）",
+    "evaluation_metric": "RMSE（Root Mean Squared Error）",
+    "submission_format": {
+      "header": "なし",
+      "columns": ["datetime", "pred"],
+      "datetime_format": "yyyy-m-d（ゼロ埋めしない）",
+      "example_correct": "2014-10-1,24",
+      "example_wrong": "2014-10-01,24"
+    },
+    "data_notes": [
+      "文字コードは UTF-8",
+      "Excel では文字化けするため注意",
+      "soldout は供給制約を示す可能性がある",
+      "メニュー名に揺れがある可能性がある"
+    ]
+  },
+
+  "analysis_focus": {
+    "primary": [
+      "曜日 × 天気 × 気温の関係",
+      "売上の季節性・周期性",
+      "外れ値の検出",
+      "カテゴリ別の売上傾向",
+      "soldout の影響"
+    ],
+    "secondary": [
+      "payday 効果の有無",
+      "気温の移動平均などの特徴量候補",
+      "降水量のカテゴリ化",
+      "メニュー名の揺れの正規化"
+    ]
+  },
+
+  "modeling_requirements": {
+    "target_variable": "y（売上個数）",
+    "metric": "RMSE",
+    "prediction_constraints": [
+      "負の値は不可",
+      "整数に丸めるかは後工程で判断"
+    ]
+  },
+
+  "output_requirements": {
+    "notebook": "notebooks/generated/eda_initial.ipynb",
+    "json_output": "src/eda_agent/orchestrator/io/output.json",
+    "log_level": "info"
+  }
+}
