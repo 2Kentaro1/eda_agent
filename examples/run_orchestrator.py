@@ -9,6 +9,10 @@ VSCode 上で Orchestrator を実行するための使用例。
 実行方法:
     python examples/run_orchestrator.py
 """
+import sys
+from pathlib import Path
+
+sys.path.append(r"C:\Users\aikoc\PythonProjectFolder\eda_agent\src")
 
 import json
 import pandas as pd
