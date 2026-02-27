@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataScientistOutput",
+  "type": "object",
+  "required": ["role", "version", "content", "metadata"],
+  "properties": {
+    "role": { "const": "DATA_SCIENTIST" },
+    "version": { "type": "string" },
+    "content": {
+      "type": "object",
+      "required": [
+        "statistical_findings",
+        "modeling_risks",
+        "improvement_suggestions",
+        "validation_notes"
+      ],
+      "properties": {
+        "statistical_findings": { "type": "array", "items": { "type": "string" } },
+        "modeling_risks": { "type": "array", "items": { "type": "string" } },
+        "improvement_suggestions": { "type": "array", "items": { "type": "string" } },
+        "validation_notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

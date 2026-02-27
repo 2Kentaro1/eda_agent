@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EDAAgentOutput",
+  "type": "object",
+  "required": ["role", "version", "content", "metadata"],
+  "properties": {
+    "role": { "const": "EDA_AGENT" },
+    "version": { "type": "string" },
+    "content": {
+      "type": "object",
+      "required": [
+        "summary",
+        "column_analysis",
+        "missing_values",
+        "outliers",
+        "correlations",
+        "recommended_plots",
+        "code_snippets"
+      ],
+      "properties": {
+        "summary": { "type": "string" },
+        "column_analysis": { "type": "object" },
+        "missing_values": { "type": "object" },
+        "outliers": { "type": "object" },
+        "correlations": { "type": "object" },
+        "recommended_plots": { "type": "array", "items": { "type": "string" } },
+        "code_snippets": { "type": "object" }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

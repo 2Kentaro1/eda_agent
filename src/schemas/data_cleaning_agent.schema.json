@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataCleaningAgentOutput",
+  "type": "object",
+  "required": ["role", "version", "content", "metadata"],
+  "properties": {
+    "role": { "const": "DATA_CLEANING_AGENT" },
+    "version": { "type": "string" },
+
+    "content": {
+      "type": "object",
+      "required": [
+        "cleaning_plan",
+        "cleaned_data_description",
+        "code_snippets"
+      ],
+      "properties": {
+
+        "cleaning_plan": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "実施したクリーニング内容の要約（箇条書き）"
+        },
+
+        "cleaned_data_description": {
+          "type": "object",
+          "description": "クリーニング後のデータの概要（行数・列数・変更点など）",
+          "properties": {
+            "rows_before": { "type": "number" },
+            "rows_after": { "type": "number" },
+            "columns": { "type": "number" },
+            "notes": { "type": "string" }
+          },
+          "required": ["rows_before", "rows_after", "columns"]
+        },
+
+        "code_snippets": {
+          "type": "object",
+          "description": "クリーニング処理の Python コード断片（df を直接操作）",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

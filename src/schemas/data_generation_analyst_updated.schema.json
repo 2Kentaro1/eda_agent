@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataGenerationAnalystUpdated",
+  "type": "object",
+  "required": ["role", "version", "mode", "content", "metadata"],
+  "properties": {
+    "role": { "const": "DATA_GENERATION_ANALYST" },
+    "version": { "type": "string" },
+    "mode": { "const": "UPDATED" },
+    "content": {
+      "type": "object",
+      "required": [
+        "validated_hypotheses",
+        "rejected_hypotheses",
+        "new_hypotheses",
+        "feature_implications"
+      ],
+      "properties": {
+        "validated_hypotheses": { "type": "array", "items": { "type": "string" } },
+        "rejected_hypotheses": { "type": "array", "items": { "type": "string" } },
+        "new_hypotheses": { "type": "array", "items": { "type": "string" } },
+        "feature_implications": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

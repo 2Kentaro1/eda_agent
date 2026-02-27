@@ -1,24 +1,24 @@
-"""
-VSCode 上で Orchestrator を実行するための使用例。
-
-- input.json を読み込む
-- Orchestrator を実行する
-- output.json に結果を書き出す
-- Notebook は notebooks/generated/ に保存される
-
-実行方法:
-    python examples/run_orchestrator.py
-"""
 import sys
 from pathlib import Path
 
-sys.path.append(r"C:\Users\aikoc\PythonProjectFolder\eda_agent\src")
+# ============================
+# 1. src を sys.path に追加
+# ============================
+
+# run_orchestrator.py → examples → eda_agent（1つ上）
+ROOT = Path(__file__).resolve().parents[1]
+
+# src ディレクトリを追加
+SRC = ROOT / "src"
+sys.path.insert(0, str(SRC))  # ★ insert(0) が重要
+
+print(">>> sys.path に追加されたパス:", SRC)
 
 import json
 import pandas as pd
 from pathlib import Path
 
-from src.eda_agent.orchestrator.orchestrator import Orchestrator
+from eda_agent.orchestrator.orchestrator import Orchestrator
 
 # -----------------------------
 # 1. 入力データの読み込み

@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataGenerationAnalystInitial",
+  "type": "object",
+  "required": ["role", "version", "mode", "content", "metadata"],
+  "properties": {
+    "role": { "const": "DATA_GENERATION_ANALYST" },
+    "version": { "type": "string" },
+    "mode": { "const": "INITIAL" },
+    "content": {
+      "type": "object",
+      "required": ["hypotheses", "expected_patterns", "risks"],
+      "properties": {
+        "hypotheses": { "type": "array", "items": { "type": "string" } },
+        "expected_patterns": { "type": "array", "items": { "type": "string" } },
+        "risks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}
