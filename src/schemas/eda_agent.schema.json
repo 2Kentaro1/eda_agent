@@ -2,37 +2,38 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "EDAAgentOutput",
   "type": "object",
-  "required": ["role", "version", "content", "metadata"],
+  "required": ["role", "version", "content"],
   "properties": {
-    "role": { "const": "EDA_AGENT" },
-    "version": { "type": "string" },
+    "role": {
+      "type": "string",
+      "enum": ["EDA_AGENT"]
+    },
+    "version": {
+      "type": "string"
+    },
     "content": {
       "type": "object",
-      "required": [
-        "summary",
-        "column_analysis",
-        "missing_values",
-        "outliers",
-        "correlations",
-        "recommended_plots",
-        "code_snippets"
-      ],
+      "required": ["code_snippets", "plot_snippets"],
       "properties": {
-        "summary": { "type": "string" },
-        "column_analysis": { "type": "object" },
-        "missing_values": { "type": "object" },
-        "outliers": { "type": "object" },
-        "correlations": { "type": "object" },
-        "recommended_plots": { "type": "array", "items": { "type": "string" } },
-        "code_snippets": { "type": "object" }
+        "code_snippets": {
+          "type": "object",
+          "description": "実行可能な EDA コード（DataFrame を返す必要はない）",
+          "additionalProperties": { "type": "string" }
+        },
+        "plot_snippets": {
+          "type": "object",
+          "description": "プロット用コード（Notebook で実行される）",
+          "additionalProperties": { "type": "string" }
+        },
+        "eda_results": {
+          "type": ["object", "null"],
+          "description": "EDA_AGENT は結果を返さないため null で問題ない",
+          "nullable": true
+        }
       }
     },
     "metadata": {
-      "type": "object",
-      "required": ["timestamp"],
-      "properties": {
-        "timestamp": { "type": "string" }
-      }
+      "type": "object"
     }
   }
 }

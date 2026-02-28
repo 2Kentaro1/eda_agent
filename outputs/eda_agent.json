@@ -1,0 +1,44 @@
+{
+  "role": "EDA_AGENT",
+  "version": "1.0",
+  "content": {
+    "code_snippets": {
+      "import_libs": "import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns",
+      "set_matplotlib_style": "# matplotlibのスタイルを設定\nplt.style.use('ggplot')",
+      "df_info": "# df_trainの基本情報（データ型、非null値の数）を表示\ndf_train.info()",
+      "df_head": "# df_trainの最初の5行を表示\ndf_train.head()",
+      "df_describe_numeric": "# 数値型カラムの基本統計量を表示\ndf_train.describe()",
+      "df_describe_object": "# オブジェクト型（カテゴリ）カラムの基本統計量を表示\ndf_train.describe(include='object')",
+      "missing_values_count": "# 各カラムの欠損値の数を表示\ndf_train.isnull().sum()",
+      "unique_values_week": "# 'week'カラムのユニーク値とその頻度を表示\nprint(\"--- 'week' unique values and counts ---\")\nprint(df_train['week'].value_counts())",
+      "unique_values_soldout": "# 'soldout'カラムのユニーク値とその頻度を表示\nprint(\"\\n--- 'soldout' unique values and counts ---\")\nprint(df_train['soldout'].value_counts())",
+      "unique_values_name_top10": "# 'name'カラムのユニーク値の数と上位10件を表示\nprint(\"\\n--- 'name' unique values and top 10 counts ---\")\nprint(f\"Unique values in 'name': {df_train['name'].nunique()}\")\nprint(df_train['name'].value_counts().head(10))",
+      "unique_values_remarks": "# 'remarks'カラムのユニーク値とその頻度を表示\nprint(\"\\n--- 'remarks' unique values and counts ---\")\nprint(df_train['remarks'].value_counts())",
+      "unique_values_event": "# 'event'カラムのユニーク値とその頻度を表示\nprint(\"\\n--- 'event' unique values and counts ---\")\nprint(df_train['event'].value_counts())",
+      "unique_values_payday": "# 'payday'カラムのユニーク値とその頻度を表示\nprint(\"\\n--- 'payday' unique values and counts ---\")\nprint(df_train['payday'].value_counts())",
+      "unique_values_weather": "# 'weather'カラムのユニーク値とその頻度を表示\nprint(\"\\n--- 'weather' unique values and counts ---\")\nprint(df_train['weather'].value_counts())",
+      "correlation_matrix": "# 数値型カラム間の相関行列を表示\nprint(\"\\n--- Correlation Matrix of Numerical Features ---\")\nprint(df_train.select_dtypes(include=np.number).corr())"
+    },
+    "plot_snippets": {
+      "y_distribution": "# 販売数(y)の分布をヒストグラムとボックスプロットで可視化\nplt.figure(figsize=(12, 5))\nplt.subplot(1, 2, 1)\nsns.histplot(df_train['y'], kde=True)\nplt.title('Distribution of Sales (y)')\nplt.xlabel('Sales (y)')\nplt.ylabel('Frequency')\nplt.subplot(1, 2, 2)\nsns.boxplot(y=df_train['y'])\nplt.title('Boxplot of Sales (y)')\nplt.ylabel('Sales (y)')\nplt.tight_layout()\nplt.show()",
+      "temperature_distribution": "# 気温(temperature)の分布をヒストグラムとボックスプロットで可視化\nplt.figure(figsize=(12, 5))\nplt.subplot(1, 2, 1)\nsns.histplot(df_train['temperature'], kde=True)\nplt.title('Distribution of Temperature')\nplt.xlabel('Temperature')\nplt.ylabel('Frequency')\nplt.subplot(1, 2, 2)\nsns.boxplot(y=df_train['temperature'])\nplt.title('Boxplot of Temperature')\nplt.ylabel('Temperature')\nplt.tight_layout()\nplt.show()",
+      "precipitation_distribution": "# 降水量(precipitation)の分布をヒストグラムとボックスプロットで可視化\nplt.figure(figsize=(12, 5))\nplt.subplot(1, 2, 1)\nsns.histplot(df_train['precipitation'], kde=True)\nplt.title('Distribution of Precipitation')\nplt.xlabel('Precipitation')\nplt.ylabel('Frequency')\nplt.subplot(1, 2, 2)\nsns.boxplot(y=df_train['precipitation'])\nplt.title('Boxplot of Precipitation')\nplt.ylabel('Precipitation')\nplt.tight_layout()\nplt.show()",
+      "kcal_distribution": "# カロリー(kcal)の分布をヒストグラムとボックスプロットで可視化\nplt.figure(figsize=(12, 5))\nplt.subplot(1, 2, 1)\nsns.histplot(df_train['kcal'], kde=True)\nplt.title('Distribution of Kcal')\nplt.xlabel('Kcal')\nplt.ylabel('Frequency')\nplt.subplot(1, 2, 2)\nsns.boxplot(y=df_train['kcal'])\nplt.title('Boxplot of Kcal')\nplt.ylabel('Kcal')\nplt.tight_layout()\nplt.show()",
+      "correlation_heatmap": "# 数値型カラム間の相関をヒートマップで可視化\nplt.figure(figsize=(10, 8))\nsns.heatmap(df_train.select_dtypes(include=np.number).corr(), annot=True, cmap='coolwarm', fmt='.2f')\nplt.title('Correlation Heatmap of Numerical Features')\nplt.show()",
+      "y_vs_week_boxplot": "# 曜日(week)ごとの販売数(y)の分布をボックスプロットで可視化\nplt.figure(figsize=(10, 6))\nsns.boxplot(x='week', y='y', data=df_train, order=['月', '火', '水', '木', '金'])\nplt.title('Sales (y) by Weekday')\nplt.xlabel('Weekday')\nplt.ylabel('Sales (y)')\nplt.show()",
+      "y_vs_soldout_boxplot": "# 完売フラグ(soldout)ごとの販売数(y)の分布をボックスプロットで可視化\nplt.figure(figsize=(8, 6))\nsns.boxplot(x='soldout', y='y', data=df_train)\nplt.title('Sales (y) by Soldout Flag')\nplt.xlabel('Soldout (0: No, 1: Yes)')\nplt.ylabel('Sales (y)')\nplt.show()",
+      "y_vs_payday_boxplot": "# 給料日(payday)ごとの販売数(y)の分布をボックスプロットで可視化\nplt.figure(figsize=(8, 6))\nsns.boxplot(x='payday', y='y', data=df_train)\nplt.title('Sales (y) by Payday')\nplt.xlabel('Payday (0: No, 1: Yes)')\nplt.ylabel('Sales (y)')\nplt.show()",
+      "y_vs_weather_boxplot": "# 天気(weather)ごとの販売数(y)の分布をボックスプロットで可視化\nplt.figure(figsize=(12, 6))\nsns.boxplot(x='weather', y='y', data=df_train)\nplt.title('Sales (y) by Weather')\nplt.xlabel('Weather')\nplt.ylabel('Sales (y)')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+      "y_vs_remarks_boxplot": "# 特記事項(remarks)ごとの販売数(y)の分布をボックスプロットで可視化 (上位10項目)\nplt.figure(figsize=(12, 7))\ntop_remarks = df_train['remarks'].value_counts().head(10).index\nsns.boxplot(x='y', y='remarks', data=df_train[df_train['remarks'].isin(top_remarks)], order=top_remarks)\nplt.title('Sales (y) by Top 10 Remarks')\nplt.xlabel('Sales (y)')\nplt.ylabel('Remarks')\nplt.tight_layout()\nplt.show()",
+      "y_vs_event_boxplot": "# イベント(event)ごとの販売数(y)の分布をボックスプロットで可視化\nplt.figure(figsize=(10, 6))\nsns.boxplot(x='event', y='y', data=df_train)\nplt.title('Sales (y) by Event')\nplt.xlabel('Event')\nplt.ylabel('Sales (y)')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+      "y_vs_datetime_lineplot": "# 日付(datetime)に対する販売数(y)の時系列プロット\n# datetime列がまだdatetime型でない場合、変換します\nif not pd.api.types.is_datetime64_any_dtype(df_train['datetime']):\n    df_train['datetime'] = pd.to_datetime(df_train['datetime'])\nplt.figure(figsize=(15, 7))\nsns.lineplot(x='datetime', y='y', data=df_train)\nplt.title('Sales (y) Over Time')\nplt.xlabel('Date')\nplt.ylabel('Sales (y)')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+      "categorical_counts_week": "# 曜日(week)の項目別カウントを可視化\nplt.figure(figsize=(8, 5))\nsns.countplot(x='week', data=df_train, order=['月', '火', '水', '木', '金'])\nplt.title('Count of Weekdays')\nplt.xlabel('Weekday')\nplt.ylabel('Count')\nplt.show()",
+      "categorical_counts_soldout": "# 完売フラグ(soldout)の項目別カウントを可視化\nplt.figure(figsize=(7, 5))\nsns.countplot(x='soldout', data=df_train)\nplt.title('Count of Soldout Flag')\nplt.xlabel('Soldout')\nplt.ylabel('Count')\nplt.show()",
+      "categorical_counts_payday": "# 給料日(payday)の項目別カウントを可視化\nplt.figure(figsize=(7, 5))\nsns.countplot(x='payday', data=df_train)\nplt.title('Count of Payday')\nplt.xlabel('Payday')\nplt.ylabel('Count')\nplt.show()",
+      "categorical_counts_weather": "# 天気(weather)の項目別カウントを可視化\nplt.figure(figsize=(10, 6))\nsns.countplot(x='weather', data=df_train, order=df_train['weather'].value_counts().index)\nplt.title('Count of Weather Conditions')\nplt.xlabel('Weather')\nplt.ylabel('Count')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()",
+      "categorical_counts_remarks": "# 特記事項(remarks)の項目別カウントを可視化 (上位10項目)\nplt.figure(figsize=(10, 6))\ntop_remarks = df_train['remarks'].value_counts().head(10).index\nsns.countplot(y='remarks', data=df_train[df_train['remarks'].isin(top_remarks)], order=top_remarks)\nplt.title('Count of Top 10 Remarks')\nplt.xlabel('Count')\nplt.ylabel('Remarks')\nplt.tight_layout()\nplt.show()",
+      "categorical_counts_event": "# イベント(event)の項目別カウントを可視化\nplt.figure(figsize=(10, 6))\nsns.countplot(x='event', data=df_train, order=df_train['event'].value_counts().index)\nplt.title('Count of Events')\nplt.xlabel('Event')\nplt.ylabel('Count')\nplt.xticks(rotation=45)\nplt.tight_layout()\nplt.show()"
+    }
+  },
+  "metadata": {}
+}

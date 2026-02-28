@@ -1,0 +1,68 @@
+diff --git a/task_runner.py b/task_runner.py
+index 1111111..2222222 100644
+--- a/task_runner.py
++++ b/task_runner.py
+@@ -180,6 +180,52 @@ class TaskRunner:
+         print(f"[INFO] Loaded train: {self.df_train.shape}, test: {self.df_test.shape}")
+
++        # --- EDA 深掘りループ用の状態管理 ---
++        self.all_eda_snippets = set()   # 重複 EDA を避けるためのコード記録
++        self.eda_round = 0              # ループ回数
++
++    # ============================================================
++    # EDA ↔ Analyst 深掘りループ
++    # ============================================================
++    def loop_eda_analysis(self, max_rounds=5):
++        """
++        EDA → Analyst → EDA → Analyst … を自動で繰り返す高度ループ
++        - recommendations が空なら終了
++        - max_rounds で上限を設定
++        - 重複 EDA を避ける
++        - 各ラウンドの EDA Agent 出力を eda_agent_round_X.json として保存
++        - Analyst の内容を Notebook に追記
++        """
++
++        for _ in range(max_rounds):
++            self.eda_round += 1
++            print(f"\n=== EDA LOOP ROUND {self.eda_round} ===")
++
++            # --- 1. EDA Agent 実行 ---
++            eda_output = self.run_single("eda_agent")
++
++            # 履歴保存（eda_agent_round_X.json）
++            round_path = os.path.join(OUTPUT_DIR, f"eda_agent_round_{self.eda_round}.json")
++            with open(round_path, "w", encoding="utf-8") as f:
++                json.dump(eda_output, f, ensure_ascii=False, indent=2)
++
++            # Notebook 再生成
++            self.generate_notebook()
++
++            # --- 2. Analyst 実行 ---
++            analyst_output = self.run_single("analyst")
++
++            # Notebook に Analyst の内容を追記
++            self.append_analyst_to_notebook(analyst_output, self.eda_round)
++            self.generate_notebook()
++
++            # --- 3. recommendations が空なら終了 ---
++            recs = analyst_output.get("content", {}).get("recommendations", [])
++            if not recs:
++                print("[LOOP] No more recommendations. Stopping loop.")
++                break
++
++    # ============================================================
++    # Notebook に Analyst の内容を追記
++    # ============================================================
++    def append_analyst_to_notebook(self, analyst_output, round_id):
++        from notebook_builder.builder import NotebookBuilder
++
++        nb = NotebookBuilder(append=True)
++        nb.add_markdown(f"# Analyst Feedback (Round {round_id})")
++
++        content = analyst_output.get("content", {})
++        for section in ["business_insights", "key_findings", "risks", "recommendations"]:
++            nb.add_markdown(f"## {section.replace('_', ' ').title()}")
++            for item in content.get(section, []):
++                nb.add_markdown(f"- {item}")
++
++        nb.save(self.notebook_output_path)

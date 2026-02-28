@@ -4,8 +4,13 @@
   "type": "object",
   "required": ["role", "version", "content", "metadata"],
   "properties": {
-    "role": { "const": "ANALYST" },
-    "version": { "type": "string" },
+    "role": {
+      "type": "string",
+      "enum": ["ANALYST"]
+    },
+    "version": {
+      "type": "string"
+    },
     "content": {
       "type": "object",
       "required": [
@@ -15,17 +20,35 @@
         "recommendations"
       ],
       "properties": {
-        "business_insights": { "type": "array", "items": { "type": "string" } },
-        "key_findings": { "type": "array", "items": { "type": "string" } },
-        "risks": { "type": "array", "items": { "type": "string" } },
-        "recommendations": { "type": "array", "items": { "type": "string" } }
+        "business_insights": {
+          "type": "array",
+          "description": "Notebook の EDA 結果から得られたビジネス的洞察",
+          "items": { "type": "string" }
+        },
+        "key_findings": {
+          "type": "array",
+          "description": "Notebook の EDA 結果から得られた主要な分析結果",
+          "items": { "type": "string" }
+        },
+        "risks": {
+          "type": "array",
+          "description": "EDA 結果から判明したリスクや注意点",
+          "items": { "type": "string" }
+        },
+        "recommendations": {
+          "type": "array",
+          "description": "次に行うべき分析・改善提案（EDA 視点）",
+          "items": { "type": "string" }
+        }
       }
     },
     "metadata": {
       "type": "object",
-      "required": ["timestamp"],
       "properties": {
-        "timestamp": { "type": "string" }
+        "notebook_path": {
+          "type": "string",
+          "description": "Analyst が参照した Notebook のパス"
+        }
       }
     }
   }

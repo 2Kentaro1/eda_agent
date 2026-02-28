@@ -1,0 +1,30 @@
+{
+  "role": "DATA_CLEANING_AGENT",
+  "version": "1.0",
+  "content": {
+    "cleaning_plan": [
+      "precipitation列の'--'をNaNに変換後、数値型(float)にキャストし、中央値で補完する。",
+      "kcal列のNaNを中央値で補完する。もしkcal列全体がNaNである場合は、後続のステップで他の戦略（例: 0で補完、または特徴量エンジニアリングで対応）を検討する。",
+      "payday列のNaNを0で補完する。",
+      "remarks列とevent列のNaNを'なし'で補完する。"
+    ],
+    "cleaned_data_description": {
+      "rows_before": 207,
+      "rows_after": 207,
+      "columns": 12,
+      "notes": "欠損値補完を実施。precipitation列は文字列から数値型への変換後に補完。kcal列の全体NaNの可能性についてはコード実行時に確認が必要。"
+    },
+    "code_snippets": {
+      "import_numpy": "import numpy as np",
+      "handle_precipitation_type_and_missing": "df['precipitation'] = df['precipitation'].replace('--', np.nan).astype(float)",
+      "fillna_precipitation": "df['precipitation'] = df['precipitation'].fillna(df['precipitation'].median())",
+      "fillna_kcal": "df['kcal'] = df['kcal'].fillna(df['kcal'].median())",
+      "fillna_payday": "df['payday'] = df['payday'].fillna(0.0)",
+      "fillna_remarks": "df['remarks'] = df['remarks'].fillna('なし')",
+      "fillna_event": "df['event'] = df['event'].fillna('なし')"
+    }
+  },
+  "metadata": {
+    "timestamp": "2024-05-15T10:00:00"
+  }
+}
