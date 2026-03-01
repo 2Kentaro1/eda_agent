@@ -44,12 +44,17 @@ class NotebookBuilder:
             nbformat.write(self.nb, f)
         print(f"Notebook saved to {path} (append={self.append})")
 
+def build_notebook_from_history(history: List[Dict[str, Any]], output_path: str, round_id):
+    """
+    EDA → Analyst → EDA → Analyst … のループに対応した Notebook Builder
+    - ラウンドごとに EDA と Analyst の内容をまとめて表示
+    - code_snippets / plot_snippets をラウンド単位で整理
+    """
 
-def build_notebook_from_history(history: List[Dict[str, Any]], output_path: str):
-    builder = NotebookBuilder(append=True)
+    builder = NotebookBuilder(append=False)
 
     # Header
-    builder.add_markdown("# Analysis Notebook (EDA Only)")
+    builder.add_markdown(f"# Analysis Notebook - Round {round_id}")
     builder.add_markdown("Generated from JSON Relay Pipeline\n")
 
     # Common imports
@@ -67,61 +72,63 @@ def build_notebook_from_history(history: List[Dict[str, Any]], output_path: str)
         "plt.rcParams['xtick.labelsize'] = 12\n"
         "plt.rcParams['ytick.labelsize'] = 12\n"
     )
-    
-    # df_train の読み込みセルを追加
+
+    # Load cleaned df
     builder.add_code(
-        "df_train = pd.read_csv('df_train_after_cleaning.parquet')\n"
+        "df_train = pd.read_parquet('df_train_after_cleaning.parquet')\n"
         "print('df_train loaded:', df_train.shape)"
     )
 
-    # Collect role outputs
-    
-    role_map = defaultdict(list)
+    # --- 指定ラウンドの EDA と Analyst のみ抽出 ---
+    eda_index = None
+    analyst_index = None
 
-    for entry in history:
-        if entry.get("type") == "agent":
-            role = entry.get("role","").lower() #小文字化
-            output = entry.get("output", {})
-            role_map[role].append(output)
+    # history の中から round_id の EDA/Analyst を探す
+    eda_count = 0
+    for i, entry in enumerate(history):
+        if entry["type"] == "agent" and entry["role"] == "eda_agent":
+            eda_count += 1
+            if eda_count == round_id:
+                eda_index = i
+                # Analyst は次の entry
+                if i + 1 < len(history) and history[i+1]["role"] == "analyst":
+                    analyst_index = i + 1
+                break
 
-    section_counter = 1
+    # --- EDA セクション ---
+    if eda_index is not None:
+        entry = history[eda_index]
+        content = entry["output"]["content"]
 
-    if "eda_agent" in role_map:
-        for output in role_map["eda_agent"]:
-            code_snippets = output.get("content", {}).get("code_snippets", {})
+        builder.add_markdown(f"# 🔵 EDA Round {round_id}")
+
+        code_snippets = content.get("code_snippets", {})
+        plot_snippets = content.get("plot_snippets", {})
+
+        if code_snippets:
+            builder.add_markdown("## Code Snippets")
             for key, code in code_snippets.items():
-                title = key.replace("_", " ").title()
-                builder.add_markdown(f"# {section_counter}. {title}")
+                builder.add_markdown(f"### {key}")
                 builder.add_code(code)
-                section_counter += 1
 
-    if "eda_agent" in role_map:
-        for output in role_map["eda_agent"]:
-            plot_snippets = output.get("content", {}).get("plot_snippets", {})
-            for name, code in plot_snippets.items():
-                builder.add_markdown(f"# {section_counter}. Plot: {name}")
+        if plot_snippets:
+            builder.add_markdown("## Plots")
+            for key, code in plot_snippets.items():
+                builder.add_markdown(f"### {key}")
                 builder.add_code(code)
-                section_counter += 1
 
-    # 7. Cleaning Summary（EDA に影響する範囲のみ）
-    if "data_cleaning_agent" in role_map:
-        builder.add_markdown("# 7. Cleaning Summary")
-        for _ in role_map["data_cleaning_agent"]:
-            builder.add_code("df_train.info()")
-            builder.add_code("df_train.isnull().sum()")
+    # --- Analyst セクション ---
+    if analyst_index is not None:
+        entry = history[analyst_index]
+        content = entry["output"]["content"]
 
-    # 8. Analyst Notes
-    builder.add_markdown("# 8. Analyst Notes")
-    builder.add_markdown(
-        "この Notebook は ANALYST ロールが参照するために生成されています。\n"
-        "以下の章を参照して分析を行ってください：\n"
-        "- 1. Overview\n"
-        "- 2. Missing Values\n"
-        "- 3. Numerical Statistics\n"
-        "- 4. Categorical Statistics\n"
-        "- 5. Correlation\n"
-        "- 6. EDA Plots\n"
-        "- 7. Cleaning Summary\n"
-    )
+        builder.add_markdown(f"# 🟠 Analyst Feedback (Round {round_id})")
+
+        for section in ["business_insights", "key_findings", "risks", "recommendations"]:
+            items = content.get(section, [])
+            if items:
+                builder.add_markdown(f"## {section.replace('_', ' ').title()}")
+                for item in items:
+                    builder.add_markdown(f"- {item}")
 
     builder.save(output_path)

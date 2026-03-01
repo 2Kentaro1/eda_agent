@@ -13,4 +13,6 @@ notebooks/generated/
 
 data/
 
+outputs/
+
 .venv
