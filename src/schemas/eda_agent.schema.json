@@ -9,7 +9,8 @@
       "enum": ["EDA_AGENT"]
     },
     "version": {
-      "type": "string"
+      "type": "string",
+      "description": "EDA Agent のスキーマバージョン"
     },
     "content": {
       "type": "object",
@@ -17,23 +18,26 @@
       "properties": {
         "code_snippets": {
           "type": "object",
-          "description": "実行可能な EDA コード（DataFrame を返す必要はない）",
-          "additionalProperties": { "type": "string" }
+          "description": "特徴量生成・集計・統計処理などの実行可能な Python コード",
+          "additionalProperties": {
+            "type": "string",
+            "description": "Notebook でそのまま実行可能な Python コード"
+          }
         },
         "plot_snippets": {
           "type": "object",
-          "description": "プロット用コード（Notebook で実行される）",
-          "additionalProperties": { "type": "string" }
-        },
-        "eda_results": {
-          "type": ["object", "null"],
-          "description": "EDA_AGENT は結果を返さないため null で問題ない",
-          "nullable": true
+          "description": "可視化用の Python コード（matplotlib / seaborn）",
+          "additionalProperties": {
+            "type": "string",
+            "description": "Notebook でそのまま実行可能な Python コード"
+          }
         }
       }
     },
     "metadata": {
-      "type": "object"
+      "type": "object",
+      "description": "任意のメタ情報（将来拡張用）",
+      "additionalProperties": true
     }
   }
 }

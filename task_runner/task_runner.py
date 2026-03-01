@@ -15,6 +15,7 @@ from pathlib import Path
 import os
 import json
 import pandas as pd
+import numpy as np
 from typing import Dict, Any, Optional
 from copy import deepcopy
 from google import genai
@@ -28,14 +29,14 @@ SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))  # ★ insert(0) が重要
 
 # Notebook Builder
-from notebook_builder.builder import build_notebook_from_history
+from notebook_builder.builder import build_round_notebook_for_eda, append_analyst_summary_to_notebook
 
 
 # =========================
 # 設定
 # =========================
 
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3-flash-preview"
 GENAI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GENAI_API_KEY:
@@ -91,6 +92,29 @@ class SchemaCache:
 
 schema_cache = SchemaCache(SCHEMA_DIR)
 
+# -------------------------
+# JSONの括弧閉じを確認
+# -------------------------
+
+def extract_json(raw: str) -> str:
+    # 最初の { を探す
+    start = raw.find("{")
+    if start == -1:
+        raise ValueError("No JSON object found")
+
+    # { から始めて、対応する } を探す
+    depth = 0
+    for i in range(start, len(raw)):
+        if raw[i] == "{":
+            depth += 1
+        elif raw[i] == "}":
+            depth -= 1
+            if depth == 0:
+                # 正しく閉じた位置
+                return raw[start:i+1]
+
+    raise ValueError("JSON braces not balanced")
+
 
 # =========================
 # Gemini 呼び出し
@@ -104,25 +128,35 @@ def call_gemini(prompt: str, payload: Optional[Dict[str, Any]]) -> Dict[str, Any
         user_input = "以下が入力コンテキスト(JSON)です。\n" + json.dumps(payload, ensure_ascii=False, indent=2)
 
     response = client.models.generate_content(
-        model = GEMINI_MODEL,
+        model=GEMINI_MODEL,
         contents=[prompt, user_input],
         config={"response_mime_type": "application/json"},
     )
 
-    return json.loads(response.text)
+    # Gemini の純粋なテキスト部分を取得
+    raw = response.candidates[0].content.parts[0].text.strip()
+
+    json_str = extract_json(raw)
+
+    try:
+        return json.loads(json_str)
+
+    except json.JSONDecodeError:
+        print("=== RAW ANALYST OUTPUT (JSONDecodeError) ===")
+        print(raw)
+        raise
 
 DEPENDENCY_MAP = {
     "manager": [],
     "data_generation_analyst_initial": ["manager"],
     "data_cleaning_agent": ["manager"],
-    "eda_agent": ["manager","data_cleaning_agent","data_generation_analyst_initial"],
-    "analyst": ["manager","eda_agent", "data_cleaning_agent"],
-    "data_generation_analyst_updated": ["manager","analyst", "data_cleaning_agent"],
+    "eda_agent": ["manager"],
+    "analyst": ["manager"],
+    "data_generation_analyst_updated": ["manager"],
     "data_scientist": ["manager","analyst", "model_coder"],
     "feature_engineer": ["manager","data_generation_analyst_updated", "data_cleaning_agent"],
     "model_designer": ["manager","feature_engineer"],
     "model_coder": ["model_designer"],
-    "reviewer": []  # reviewer は常に agent_output を直接受け取る
 }
 
 ROLES_THAT_REQUIRE_DATA = {
@@ -137,6 +171,15 @@ ROLES_THAT_REQUIRE_DATA = {
     "analyst": False,
     "data_scientist": False,
 }
+
+def load_all_analyst_history():
+    analyst_history = []
+    for fname in sorted(os.listdir(OUTPUT_DIR)):
+        if fname.startswith("analyst_round_") and fname.endswith(".json"):
+            path = os.path.join(OUTPUT_DIR, fname)
+            with open(path, "r", encoding="utf-8") as f:
+                analyst_history.append(json.load(f))
+    return analyst_history
 
 
 # =========================
@@ -206,27 +249,17 @@ class TaskRunner:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(output, f, ensure_ascii=False, indent=2)
 
-    # -------------------------
-    # output ロード
-    # -------------------------
-    def load_previous_outputs(self) -> Dict[str, Any]:
-        payload = {}
-        for role in self.ROLE_LIST:
-            path = os.path.join(OUTPUT_DIR, f"{role}.json")
-            if os.path.exists(path):
-                with open(path, "r", encoding="utf-8") as f:
-                    payload[role] = json.load(f)
-        return payload
-
-    def save_reviewer_output(self, reviewer_output: Dict[str, Any]):
-        reviewed_role = reviewer_output["metadata"].get("reviewed_role", "unknown")
-        filename = f"reviewer_{reviewed_role.lower()}.json"
-        path = os.path.join(OUTPUT_DIR, filename)
-
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(reviewer_output, f, ensure_ascii=False, indent=2)
-
-        print(f"[REVIEWER] Saved reviewer output to {path}")
+    # # -------------------------
+    # # output ロード
+    # # -------------------------
+    # def load_previous_outputs(self) -> Dict[str, Any]:
+    #     payload = {}
+    #     for role in self.ROLE_LIST:
+    #         path = os.path.join(OUTPUT_DIR, f"{role}.json")
+    #         if os.path.exists(path):
+    #             with open(path, "r", encoding="utf-8") as f:
+    #                 payload[role] = json.load(f)
+    #     return payload
 
     def save_cleaned_dataframes(self):
         out_dir = os.path.join(BASE_DIR, "..", "notebooks", "generated")
@@ -240,26 +273,6 @@ class TaskRunner:
 
         print(f"[CLEANING] Saved cleaned df_train to {train_path}")
         print(f"[CLEANING] Saved cleaned df_test to {test_path}")
-
-
-    # -------------------------------
-    # Reviewer結果をagent_outputに統合
-    # -------------------------------
-    def merge_reviewer_feedback(self, agent_output, reviewer_output):
-        """
-        Reviewer の結果を任意の agent_output に統合する。
-        """
-        feedback = reviewer_output.get("content", {})
-        agent_output["content"]["review_feedback"] = feedback
-        return agent_output
-
-    # -------------------------------
-    # notebook実行処理
-    # ------------------------------
-    def generate_round_notebook(self, round_id: int):
-        output_path = f"notebooks/generated/analysis_round_{round_id}.ipynb"
-        build_notebook_from_history(self.history, output_path)
-        print(f"[NOTEBOOK] Saved round notebook → {output_path}")
 
     # -------------------------
     # 単一タスク実行（CLI/Notebook 共通）
@@ -289,6 +302,10 @@ class TaskRunner:
             # 実行しない。Notebook に書くだけ。
             pass
 
+        # --- Analyst ---
+        if role_key == "analyst":
+            self.update_accumulated_analyst_json(agent_output)
+
         # === Feature Engineer ===
         if role_key == "feature_engineer":
             code_snippets = agent_output.get("content", {}).get("code_snippets", {})
@@ -298,11 +315,11 @@ class TaskRunner:
         # 保存
         self.save_output(role_key, agent_output)
 
-        # ★★★ round ごとの JSON 保存（最重要）★★★
-        if role_key == "eda_agent" or role_key == "analyst":
-            round_path = os.path.join(OUTPUT_DIR, f"{role_key}_round_{self.eda_round}.json")
-            with open(round_path, "w", encoding="utf-8") as f:
-                json.dump(agent_output, f, ensure_ascii=False, indent=2)
+        # # ★★★ round ごとの JSON 保存（最重要）★★★
+        # if role_key == "eda_agent" or role_key == "analyst":
+        #     round_path = os.path.join(OUTPUT_DIR, f"{role_key}_round_{self.eda_round}.json")
+        #     with open(round_path, "w", encoding="utf-8") as f:
+        #         json.dump(agent_output, f, ensure_ascii=False, indent=2)
 
         # history に追加
         self.history.append({
@@ -320,14 +337,24 @@ class TaskRunner:
         Cleaning Agent の code_snippets を実行し、
         df_train / df_test を更新する。
         """
-        local_vars = {
-            "df": self.df_train
-        }
+
+        # df_train をローカルコピー
+        df_train = self.df_train.copy()
 
         for name, code in code_snippets.items():
             print(f"[CLEANING] Executing snippet: {name}")
+
+            # cleaning 実行環境
+            local_vars = {
+                "df_train": df_train,
+                "pd": pd,
+                "np": np
+            }
+
             try:
                 exec(code, {}, local_vars)
+                # cleaning 後の df_train を取り出す
+                df_train = local_vars["df_train"]
             except Exception as e:
                 print(f"[ERROR] Cleaning code failed: {name}")
                 print(code)
@@ -335,7 +362,7 @@ class TaskRunner:
                 continue
 
         # df_train を更新
-        self.df_train = local_vars["df"]
+        self.df_train = df_train
 
     def apply_feature_code(self, code_snippets: Dict[str, str]):
         """
@@ -378,30 +405,13 @@ class TaskRunner:
         print(f"[FEATURE] Saved df_train to {train_path}")
         print(f"[FEATURE] Saved df_test to {test_path}")
 
-
-    # -------------------------
-    # Reviewer 実行
-    # -------------------------
-    def run_reviewer(self, agent_output: Dict[str, Any], validation: Dict[str, Any]):
-        prompt = load_prompt("reviewer")
-
-        payload = {
-            "agent_output": agent_output,
-            "schema_validation": validation
-        }
-
-        reviewer_output = call_gemini(prompt, payload)
-
-        # === Reviewer の出力を保存（reviewer_{role}.json） ===
-        self.save_reviewer_output(reviewer_output)
-
-        return reviewer_output
-
+    # ============================================================
+    #  Payload 構築
+    # ============================================================
     def build_payload_for_role(self, role_key: str) -> Dict[str, Any]:
         """
         依存関係に基づいて必要な output を自動ロードして payload を構築する
         """
-        analyst_round_path = None
         deps = DEPENDENCY_MAP.get(role_key, [])
         payload = {}
 
@@ -413,29 +423,95 @@ class TaskRunner:
 
         # --- EDA Agent ---
         if role_key == "eda_agent":
-            # 前ラウンドのAnalystを参照する
-            prev_round = self.eda_round -1
-            if prev_round>=1:
-                analyst_round_path = os.path.join(OUTPUT_DIR, f"analyst_round_{prev_round}.json")
+            acc_path = os.path.join(OUTPUT_DIR, "analyst_accumulated.json")
 
-            if analyst_round_path and os.path.exists(analyst_round_path):
-                with open(analyst_round_path, "r", encoding="utf-8") as f:
-                    analyst_json = json.load(f)
-                recs = analyst_json.get("content", {}).get("recommendations", [])
+            if os.path.exists(acc_path):
+                with open(acc_path, "r", encoding="utf-8") as f:
+                    acc = json.load(f)
+                new_recs = [r for r in acc["eda_recommendations"] if r["status"] == "new"]
             else:
-                recs = []
+                new_recs = []
+            payload["is_first_round"] = (self.eda_round == 1)
+            payload["analyst_recommendations"] = new_recs
+            payload["columns"] = list(self.df_train.columns)
 
-            payload["analyst_recommendations"] = recs
+            # Notebook 全体を渡す（過去の EDA 結果を参照させる）
+            if os.path.exists(NOTEBOOK_OUTPUT):
+                with open(NOTEBOOK_OUTPUT, "r", encoding="utf-8") as f:
+                    nb_json = json.load(f)
+                payload["notebook_json"] = nb_json
+            else:
+                payload["notebook_json"] = None
+
 
         # --- Analyst ---
         if role_key == "analyst":
-            round_path = f"notebooks/generated/analysis_round_{self.eda_round}.ipynb"
-            with open(round_path, "r", encoding="utf-8") as f:
-                nb_json = json.load(f)
-            payload["notebook_json"] = nb_json
+            # 最新 round の Notebook を渡す
+            nb_path = f"notebooks/generated/analysis_round_{self.eda_round}.ipynb"
+            with open(nb_path, "r", encoding="utf-8") as f:
+                payload["notebook_json"] = json.load(f)
 
+            # 過去 round の analyst_history を渡す
+            analyst_history = []
+            for r in range(1, self.eda_round):
+                p = os.path.join(OUTPUT_DIR, f"analyst_round_{r}.json")
+                if os.path.exists(p):
+                    with open(p, "r", encoding="utf-8") as f:
+                        analyst_history.append(json.load(f))
+            payload["analyst_history"] = analyst_history
+
+            # accumulated（重複禁止用）
+            acc_path = os.path.join(OUTPUT_DIR, "analyst_accumulated.json")
+            if os.path.exists(acc_path):
+                with open(acc_path, "r", encoding="utf-8") as f:
+                    payload["accumulated"] = json.load(f)
+
+        # data_generation_analyst_updated
+        if role_key == "data_generation_analyst_updated":
+            payload["analyst_history"] = load_all_analyst_history()
+            
         return payload
 
+    # ============================================================
+    #  Analyst JSON の積み上げ管理
+    # ============================================================
+    def update_accumulated_analyst_json(self, analyst_output: Dict[str, Any]):
+        acc_path = os.path.join(OUTPUT_DIR, "analyst_accumulated.json")
+
+        # 既存読み込み
+        if os.path.exists(acc_path):
+            with open(acc_path, "r", encoding="utf-8") as f:
+                acc = json.load(f)
+        else:
+            acc = {"eda_recommendations": [], "modeling_suggestions": []}
+
+        # --- 既存の new を done に更新 ---
+        for r in acc["eda_recommendations"]:
+            if r["status"] == "new":
+                r["status"] = "done"
+
+        # --- 新規 recommendation を追加 ---
+        new_recs = analyst_output["content"].get("recommendations", [])
+        for rec in new_recs:
+            acc["eda_recommendations"].append({
+                "id": f"R{self.eda_round}-{len(acc['eda_recommendations'])+1}",
+                "round": self.eda_round,
+                "status": "new",
+                "content": rec
+            })
+
+        # --- モデル学習提案（別 key） ---
+        model_sugs = analyst_output["content"].get("modeling_suggestions", [])
+        for sug in model_sugs:
+            acc["modeling_suggestions"].append({
+                "id": f"M{self.eda_round}-{len(acc['modeling_suggestions'])+1}",
+                "round": self.eda_round,
+                "content": sug
+            })
+
+        # 保存
+        with open(acc_path, "w", encoding="utf-8") as f:
+            json.dump(acc, f, ensure_ascii=False, indent=2)
 
     def run_round(self, round_number: int):
         self.eda_round = round_number
@@ -444,24 +520,39 @@ class TaskRunner:
         # --- 1. EDA Agent ---
         eda_output = self.run_single("eda_agent")
 
-        # Notebook 生成
+        # Notebook 生成（最新 EDA のみ append）
         nb_path = f"notebooks/generated/analysis_round_{round_number}.ipynb"
-        build_notebook_from_history(self.history, nb_path, round_number)
+        build_round_notebook_for_eda(self.history, nb_path, round_number)
         print(f"[INFO] Notebook generated: {nb_path}")
-        print("[ACTION REQUIRED] Notebook を実行してください。")
+        print("[ACTION REQUIRED] Notebook を実行してから Enter を押してください。")
+        input()  # ← 必須
 
         # --- 2. Analyst ---
         analyst_output = self.run_single("analyst")
+        
+        # --- Analyst の結果を round 別に保存 ---   
+        analyst_round_path = os.path.join(OUTPUT_DIR, f"analyst_round_{round_number}.json")
+        with open(analyst_round_path, "w", encoding="utf-8") as f:
+            json.dump(analyst_output, f, ensure_ascii=False, indent=2)
 
-        # Notebook 更新
-        build_notebook_from_history(self.history, nb_path, round_number)
+        print(f"[INFO] Analyst summary saved: {analyst_round_path}")
 
-        # --- 3. recommendations が空なら次 round 不要 ---
-        recs = analyst_output.get("content", {}).get("recommendations", [])
-        if not recs:
-            print("[INFO] No more recommendations. You can stop here.")
+        # Notebook append（Analyst の要点を追加） 
+        append_analyst_summary_to_notebook(self.history, nb_path, round_number) 
+        print(f"[INFO] Notebook updated with Analyst summary: {nb_path}")
+        
+        # --- 3. 次ラウンド判定 ---
+        acc_path = os.path.join(OUTPUT_DIR, "analyst_accumulated.json")
+        with open(acc_path, "r", encoding="utf-8") as f:
+            acc = json.load(f)
+
+        new_recs = [r for r in acc["eda_recommendations"] if r["status"] == "new"]
+
+        if not new_recs:
+            print("[INFO] No more recommendations. EDA is complete.")
         else:
-            print(f"[INFO] {len(recs)} recommendations found. 次の round を実行できます。")
+            print(f"[INFO] {len(new_recs)} new recommendations found. 次の round を実行できます。")
+
 
     def merge_rounds(self):
         # 既存の self.eda_round は使わない
@@ -476,46 +567,6 @@ class TaskRunner:
         output = "notebooks/generated/analysis_final.ipynb"
         self.merge_notebooks(round_paths, output)
         print(f"[INFO] Final merged notebook created: {output}")
-
-
-    #---------------------------
-    # NotebookにAnalystの内容を追記する関数
-    # ----------------------------
-
-    def append_analyst_to_notebook(self, analyst_output, round_id):
-        from notebook_builder.builder import NotebookBuilder
-
-        nb = NotebookBuilder(append=True)
-        nb.add_markdown(f"# Analyst Feedback (Round {round_id})")
-
-        content = analyst_output.get("content", {})
-        for section in ["competition_insights", "data_structure_findings", "risks", "recommendations"]:
-            nb.add_markdown(f"## {section.replace('_', ' ').title()}")
-            for item in content.get(section, []):
-                nb.add_markdown(f"- {item}")
-
-        nb.save(self.notebook_output_path)
-
-    def extract_latest_eda(self, notebook_json):
-        """
-        Notebook JSON から最新ラウンドの EDA セルだけを抽出する。
-        Notebook Builder が markdown で「# EDA Round X」を出力している前提。
-        """
-        cells = notebook_json.get("cells", [])
-        latest_eda_cells = []
-        found = False
-
-        # Notebook の後ろから逆順に走査
-        for cell in reversed(cells):
-            if cell["cell_type"] == "markdown" and "EDA Round" in cell["source"][0]:
-                # 最新の EDA Round の開始地点
-                found = True
-                latest_eda_cells.insert(0, cell)
-                break
-            latest_eda_cells.insert(0, cell)
-
-        return latest_eda_cells
-
 
 
     def merge_notebooks(self, notebook_paths, output_path):
@@ -542,6 +593,7 @@ class TaskRunner:
             json.dump(merged, f, ensure_ascii=False, indent=2)
 
         print(f"[MERGE] Saved merged notebook → {output_path}")
+
 
 
 # =========================

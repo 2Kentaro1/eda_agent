@@ -9,7 +9,8 @@
       "enum": ["ANALYST"]
     },
     "version": {
-      "type": "string"
+      "type": "string",
+      "description": "Analyst スキーマのバージョン"
     },
     "content": {
       "type": "object",
@@ -17,7 +18,8 @@
         "business_insights",
         "key_findings",
         "risks",
-        "recommendations"
+        "recommendations",
+        "modeling_suggestions"
       ],
       "properties": {
         "business_insights": {
@@ -37,17 +39,27 @@
         },
         "recommendations": {
           "type": "array",
-          "description": "次に行うべき分析・改善提案（EDA 視点）",
+          "description": "次ラウンドで EDA Agent が深掘りすべき新しい提案（EDA 視点のみ）",
+          "items": { "type": "string" }
+        },
+        "modeling_suggestions": {
+          "type": "array",
+          "description": "モデル学習に関する提案（EDA とは別 key）",
           "items": { "type": "string" }
         }
       }
     },
     "metadata": {
       "type": "object",
+      "required": ["notebook_path", "project_goal"],
       "properties": {
         "notebook_path": {
           "type": "string",
           "description": "Analyst が参照した Notebook のパス"
+        },
+        "project_goal": {
+          "type": "string",
+          "description": "manager.json の project_goal（分析の方向性を決める基準）"
         }
       }
     }

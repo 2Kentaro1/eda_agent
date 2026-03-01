@@ -3,28 +3,34 @@
   "version": "1.0",
   "content": {
     "cleaning_plan": [
-      "precipitation列の'--'をNaNに変換後、数値型(float)にキャストし、中央値で補完する。",
-      "kcal列のNaNを中央値で補完する。もしkcal列全体がNaNである場合は、後続のステップで他の戦略（例: 0で補完、または特徴量エンジニアリングで対応）を検討する。",
-      "payday列のNaNを0で補完する。",
-      "remarks列とevent列のNaNを'なし'で補完する。"
+      "Handle missing values in 'kcal_per_unit' by imputing with the median.",
+      "Handle missing values in 'precipitation' by imputing with the median.",
+      "Standardize categorical variations in 'weather' by converting to lowercase and stripping whitespace.",
+      "Normalize 'remarks' to consistently represent 'no information' with 'なし'.",
+      "Convert the 'datetime' column to a datetime object and extract year, month, day, and day of the week into new columns.",
+      "Fix negative values in the 'y' (sales) column by setting them to 0, creating a new 'y_fixed' column.",
+      "Identify and handle outliers in 'temperature' and 'precipitation' by capping/flooring to a reasonable range (e.g., using IQR), creating new columns.",
+      "Convert 'soldout' column to integer type, creating a new 'soldout_int' column."
     ],
     "cleaned_data_description": {
-      "rows_before": 207,
-      "rows_after": 207,
+      "rows_before": 30000,
+      "rows_after": 30000,
       "columns": 12,
-      "notes": "欠損値補完を実施。precipitation列は文字列から数値型への変換後に補完。kcal列の全体NaNの可能性についてはコード実行時に確認が必要。"
+      "notes": "Initial data cleaning focusing on imputation, standardization, datetime parsing, outlier handling, and type conversion. Assumes initial row/column count based on typical datasets. Specific outlier handling methods will be implemented in code snippets."
     },
     "code_snippets": {
-      "import_numpy": "import numpy as np",
-      "handle_precipitation_type_and_missing": "df['precipitation'] = df['precipitation'].replace('--', np.nan).astype(float)",
-      "fillna_precipitation": "df['precipitation'] = df['precipitation'].fillna(df['precipitation'].median())",
-      "fillna_kcal": "df['kcal'] = df['kcal'].fillna(df['kcal'].median())",
-      "fillna_payday": "df['payday'] = df['payday'].fillna(0.0)",
-      "fillna_remarks": "df['remarks'] = df['remarks'].fillna('なし')",
-      "fillna_event": "df['event'] = df['event'].fillna('なし')"
+      "impute_kcal_median": "df_train['kcal_per_unit'] = df_train['kcal_per_unit'].fillna(df_train['kcal_per_unit'].median())",
+      "impute_precipitation_median": "df_train['precipitation'] = df_train['precipitation'].fillna(df_train['precipitation'].median())",
+      "standardize_weather": "df_train['weather_cleaned'] = df_train['weather'].str.lower().str.strip()",
+      "normalize_remarks": "df_train['remarks_normalized'] = df_train['remarks'].replace(['なし', 'None', 'nan', ' ', ''], 'なし')",
+      "parse_datetime_features": "df_train['datetime'] = pd.to_datetime(df_train['datetime'])\ndf_train['year'] = df_train['datetime'].dt.year\ndf_train['month'] = df_train['datetime'].dt.month\ndf_train['day'] = df_train['datetime'].dt.day\ndf_train['day_of_week'] = df_train['datetime'].dt.dayofweek",
+      "fix_negative_sales": "df_train['y_fixed'] = df_train['y'].apply(lambda x: max(x, 0))",
+      "handle_temperature_outliers": "Q1_temp = df_train['temperature'].quantile(0.25)\nQ3_temp = df_train['temperature'].quantile(0.75)\nIQR_temp = Q3_temp - Q1_temp\nlower_bound_temp = Q1_temp - 1.5 * IQR_temp\nupper_bound_temp = Q3_temp + 1.5 * IQR_temp\ndf_train['temperature_capped'] = df_train['temperature'].clip(lower=lower_bound_temp, upper=upper_bound_temp)",
+      "handle_precipitation_outliers": "Q1_precip = df_train['precipitation'].quantile(0.25)\nQ3_precip = df_train['precipitation'].quantile(0.75)\nIQR_precip = Q3_precip - Q1_precip\nlower_bound_precip = Q1_precip - 1.5 * IQR_precip\nupper_bound_precip = Q3_precip + 1.5 * IQR_precip\ndf_train['precipitation_capped'] = df_train['precipitation'].clip(lower=lower_bound_precip, upper=upper_bound_precip)",
+      "convert_soldout_to_int": "df_train['soldout_int'] = df_train['soldout'].astype(int)"
     }
   },
   "metadata": {
-    "timestamp": "2024-05-15T10:00:00"
+    "timestamp": "2026-02-28T16:37:00Z"
   }
 }
