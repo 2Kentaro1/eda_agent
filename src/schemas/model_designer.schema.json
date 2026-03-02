@@ -6,28 +6,131 @@
   "properties": {
     "role": { "const": "MODEL_DESIGNER" },
     "version": { "type": "string" },
+
     "content": {
       "type": "object",
       "required": [
-        "model_type",
-        "design_rationale",
-        "feature_set",
-        "hyperparameter_plan",
-        "training_strategy"
+        "model_architecture",
+        "feature_plan",
+        "training_data_plan",
+        "validation_strategy",
+        "hyperparameter_plan"
       ],
       "properties": {
-        "model_type": { "type": "string" },
-        "design_rationale": { "type": "array", "items": { "type": "string" } },
-        "feature_set": { "type": "array", "items": { "type": "string" } },
-        "hyperparameter_plan": { "type": "object" },
-        "training_strategy": { "type": "object" }
+
+        "model_architecture": {
+          "type": "object",
+          "required": ["model_type", "design_rationale", "limitations"],
+          "properties": {
+            "model_type": { "type": "string" },
+            "design_rationale": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "limitations": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+
+        "feature_plan": {
+          "type": "object",
+          "required": [
+            "final_feature_set",
+            "interaction_features",
+            "time_series_features",
+            "excluded_features"
+          ],
+          "properties": {
+            "final_feature_set": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "interaction_features": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "time_series_features": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "excluded_features": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+
+        "training_data_plan": {
+          "type": "object",
+          "required": [
+            "train_valid_split",
+            "excluded_data_policy",
+            "preprocessing_steps",
+            "categorical_encoding"
+          ],
+          "properties": {
+            "train_valid_split": { "type": "string" },
+            "excluded_data_policy": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "preprocessing_steps": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "categorical_encoding": { "type": "string" }
+          }
+        },
+
+        "validation_strategy": {
+          "type": "object",
+          "required": [
+            "cv_method",
+            "folds",
+            "evaluation_metrics",
+            "segment_evaluation"
+          ],
+          "properties": {
+            "cv_method": { "type": "string" },
+            "folds": { "type": "integer" },
+            "evaluation_metrics": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "segment_evaluation": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+
+        "hyperparameter_plan": {
+          "type": "object",
+          "required": [
+            "learning_rate",
+            "max_depth",
+            "regularization",
+            "early_stopping"
+          ],
+          "properties": {
+            "learning_rate": { "type": "string" },
+            "max_depth": { "type": "string" },
+            "regularization": { "type": "string" },
+            "early_stopping": { "type": "string" }
+          }
+        }
       }
     },
+
     "metadata": {
       "type": "object",
-      "required": ["timestamp"],
+      "required": ["timestamp", "data_scientist_version", "analyst_history_count"],
       "properties": {
-        "timestamp": { "type": "string" }
+        "timestamp": { "type": "string" },
+        "data_scientist_version": { "type": "string" },
+        "analyst_history_count": { "type": "integer" }
       }
     }
   }

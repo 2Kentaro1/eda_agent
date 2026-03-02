@@ -6,26 +6,116 @@
   "properties": {
     "role": { "const": "DATA_SCIENTIST" },
     "version": { "type": "string" },
+
     "content": {
       "type": "object",
       "required": [
-        "statistical_findings",
+        "analyst_summary",
+        "modelable_factors",
+        "non_modelable_factors",
+        "feature_specification",
+        "model_design",
+        "excluded_data_policy",
         "modeling_risks",
-        "improvement_suggestions",
-        "validation_notes"
+        "improvement_suggestions"
       ],
       "properties": {
-        "statistical_findings": { "type": "array", "items": { "type": "string" } },
-        "modeling_risks": { "type": "array", "items": { "type": "string" } },
-        "improvement_suggestions": { "type": "array", "items": { "type": "string" } },
-        "validation_notes": { "type": "array", "items": { "type": "string" } }
+
+        "analyst_summary": {
+          "type": "array",
+          "description": "Round1〜5 の Analyst の分析結果を統合した要約",
+          "items": { "type": "string" }
+        },
+
+        "modelable_factors": {
+          "type": "array",
+          "description": "モデルで説明可能な要因（気温、曜日、ラグ、カテゴリなど）",
+          "items": { "type": "string" }
+        },
+
+        "non_modelable_factors": {
+          "type": "array",
+          "description": "モデルでは扱えない外部要因・構造変化・突発イベントなど",
+          "items": { "type": "string" }
+        },
+
+        "feature_specification": {
+          "type": "object",
+          "required": [
+            "use_features",
+            "interaction_features",
+            "time_series_features",
+            "exclude_features"
+          ],
+          "properties": {
+            "use_features": {
+              "type": "array",
+              "description": "モデルに投入する特徴量",
+              "items": { "type": "string" }
+            },
+            "interaction_features": {
+              "type": "array",
+              "description": "相互作用特徴量（例: weather × is_fried）",
+              "items": { "type": "string" }
+            },
+            "time_series_features": {
+              "type": "array",
+              "description": "時系列特徴量（lag, trend, seasonality）",
+              "items": { "type": "string" }
+            },
+            "exclude_features": {
+              "type": "array",
+              "description": "リーク・ノイズ・予測不可能などの理由で除外する特徴量",
+              "items": { "type": "string" }
+            }
+          }
+        },
+
+        "model_design": {
+          "type": "object",
+          "required": [
+            "baseline_model",
+            "main_model",
+            "cv_strategy",
+            "evaluation_metrics"
+          ],
+          "properties": {
+            "baseline_model": { "type": "string" },
+            "main_model": { "type": "string" },
+            "cv_strategy": { "type": "string" },
+            "evaluation_metrics": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+
+        "excluded_data_policy": {
+          "type": "array",
+          "description": "モデル学習に投入しないデータ・レアケース・外れ値の方針",
+          "items": { "type": "string" }
+        },
+
+        "modeling_risks": {
+          "type": "array",
+          "description": "非定常性・過学習・データ不足などのリスク",
+          "items": { "type": "string" }
+        },
+
+        "improvement_suggestions": {
+          "type": "array",
+          "description": "モデル改善案・追加分析案",
+          "items": { "type": "string" }
+        }
       }
     },
+
     "metadata": {
       "type": "object",
-      "required": ["timestamp"],
+      "required": ["timestamp", "analyst_history_count"],
       "properties": {
-        "timestamp": { "type": "string" }
+        "timestamp": { "type": "string" },
+        "analyst_history_count": { "type": "integer" }
       }
     }
   }

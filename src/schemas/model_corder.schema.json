@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModelCoderOutput",
+  "type": "object",
+  "required": ["role", "version", "content", "metadata"],
+  "properties": {
+    "role": { "const": "MODEL_CODER" },
+    "version": { "type": "string" },
+
+    "content": {
+      "type": "object",
+      "required": [
+        "imports",
+        "data_prep_code",
+        "training_code",
+        "evaluation_code"
+      ],
+      "properties": {
+
+        "imports": {
+          "type": "array",
+          "description": "Python import statements required for model training",
+          "items": { "type": "string" }
+        },
+
+        "data_prep_code": {
+          "type": "string",
+          "description": "Code snippet for feature construction, preprocessing, and dataset preparation"
+        },
+
+        "training_code": {
+          "type": "array",
+          "description": "Code snippet list for training LightGBM, Ridge, and ensemble logic",
+          "items": { "type": "string" }
+        },
+
+        "evaluation_code": {
+          "type": "array",
+          "description": "Code snippet list for RMSE/MAE/R2 and segment-based evaluation",
+          "items": { "type": "string" }
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "required": ["timestamp"],
+      "properties": {
+        "timestamp": { "type": "string" }
+      }
+    }
+  }
+}

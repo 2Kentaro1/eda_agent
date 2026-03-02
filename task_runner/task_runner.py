@@ -153,9 +153,9 @@ DEPENDENCY_MAP = {
     "eda_agent": ["manager"],
     "analyst": ["manager"],
     "data_generation_analyst_updated": ["manager"],
-    "data_scientist": ["manager","analyst", "model_coder"],
+    "data_scientist": ["manager","data_generation_analyst_updated"],
     "feature_engineer": ["manager","data_generation_analyst_updated", "data_cleaning_agent"],
-    "model_designer": ["manager","feature_engineer"],
+    "model_designer": ["manager","data_scientist"],
     "model_coder": ["model_designer"],
 }
 
@@ -469,7 +469,15 @@ class TaskRunner:
         # data_generation_analyst_updated
         if role_key == "data_generation_analyst_updated":
             payload["analyst_history"] = load_all_analyst_history()
-            
+
+        # data_scientist
+        if role_key == "data_scientist":
+            payload["analyst_history"] = load_all_analyst_history()
+
+        # model_designer
+        if role_key == "modeldesigner":
+            payload["analyst_history"] = load_all_analyst_history()
+
         return payload
 
     # ============================================================
